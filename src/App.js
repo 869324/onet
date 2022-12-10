@@ -1,8 +1,8 @@
 import "./App.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { generateMatrix } from "./utils";
+import { generateMatrix, checkStraightRoute } from "./utils";
 import { GAME_STATUS, colors } from "./constants";
 
 import { FaPlay, FaPause } from "react-icons/fa";
@@ -10,13 +10,29 @@ import { MdRestartAlt } from "react-icons/md";
 
 function App() {
   const [gameStatus, setGameStatus] = useState(GAME_STATUS.STOPPED);
-  const [time, setTime] = useState(0);
+  const [time, setTime] = useState(20);
   const [matrix, setMatrix] = useState(generateMatrix());
   const [moves, setMoves] = useState([]);
   const [removedCells, setRemovedCells] = useState([]);
 
+  useEffect(() => {
+    if (gameStatus === GAME_STATUS.PLAYING) {
+      const interval = setInterval(() => {
+        setTime((time) => (time > 0 ? time - 1 : time));
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [gameStatus]);
+
+  useEffect(() => {
+    if (time == 0) {
+      setGameStatus(GAME_STATUS.STOPPED);
+    }
+  }, [time]);
+
   function formatTime(seconds) {
-    let minutes = seconds / 60;
+    let minutes = Math.floor(seconds / 60);
     let secs = seconds - minutes * 60;
 
     minutes = minutes < 10 ? `0${minutes}` : minutes;
@@ -26,30 +42,45 @@ function App() {
     return time;
   }
 
+  function startTimer() {}
+
+  function stopTimer() {}
+
+  function start() {
+    setGameStatus(GAME_STATUS.PLAYING);
+    startTimer();
+  }
+
+  function pause() {
+    setGameStatus(GAME_STATUS.PAUSED);
+    stopTimer();
+  }
+
   function reset() {
-    setTime(0);
+    setTime(90);
     setGameStatus(GAME_STATUS.STOPPED);
     setMatrix(generateMatrix());
     setRemovedCells([]);
   }
 
   function handleCellClick(cell) {
-    const id = `${cell.rowId}${cell.cellId}`;
-    if (moves.length < 2) {
-      const updatedMoves = moves;
+    const updatedMoves = moves;
 
-      const index = updatedMoves.findIndex((c) => c === id);
+    if (moves.length < 2) {
+      const index = updatedMoves.findIndex(
+        (c) => c.row === cell.row && c.column === cell.column
+      );
 
       if (index > -1) {
         updatedMoves.splice(index, 1);
       } else {
-        updatedMoves.push(id);
+        updatedMoves.push(cell);
       }
 
       setMoves([...updatedMoves]);
     }
 
-    if (moves.length === 2) {
+    if (updatedMoves.length === 2) {
       const isValid = validateMove();
 
       if (isValid) {
@@ -61,7 +92,24 @@ function App() {
   }
 
   function validateMove() {
-    return true;
+    const cell1 = moves[0];
+
+    const cell2 = moves[1];
+
+    const cell1Color = matrix[cell1.row][cell1.column].color;
+    const cell2Color = matrix[cell2.row][cell2.column].color;
+
+    if (cell1Color !== cell2Color) {
+      return false;
+    } else {
+      let isValid = checkStraightRoute(matrix, removedCells, cell1, cell2);
+      if (isValid) {
+        return isValid;
+      } else {
+        return false;
+        //isValid = checkOneTurnRoute(matrix, removedCells, cell1, cell2)
+      }
+    }
   }
 
   return (
@@ -74,11 +122,11 @@ function App() {
         <div className="actions">
           {(gameStatus === GAME_STATUS.STOPPED ||
             gameStatus === GAME_STATUS.PAUSED) && (
-            <FaPlay className="play" size={21} />
+            <FaPlay className="play" size={21} onClick={start} />
           )}
 
           {gameStatus === GAME_STATUS.PLAYING && (
-            <FaPause className="play" size={21} />
+            <FaPause className="play" size={21} onClick={pause} />
           )}
 
           <span className="reset" onClick={reset}>
@@ -98,12 +146,13 @@ function App() {
               return (
                 <tr className="row" key={rowId}>
                   {row.map((cell, cellId) => {
-                    const isRemoved = removedCells.includes(
-                      `${rowId}${cellId}`
+                    const isRemoved = removedCells.find(
+                      (c) => c.row === cell.row && c.column === cell.column
                     );
 
-                    console.log({ moves, id: `${rowId}${cellId}` });
-                    const isClicked = moves.includes(`${rowId}${cellId}`);
+                    const isClicked = moves.find(
+                      (c) => c.row === cell.row && c.column === cell.column
+                    );
 
                     return (
                       <td
@@ -120,9 +169,7 @@ function App() {
                             ? `transparent`
                             : `${colors[cell.color]}`,
                         }}
-                        onClick={() =>
-                          handleCellClick({ ...cell, rowId, cellId })
-                        }
+                        onClick={() => handleCellClick(cell)}
                       ></td>
                     );
                   })}
