@@ -3,17 +3,19 @@ import "./App.css";
 import { useEffect, useState } from "react";
 
 import { generateMatrix, checkRoutes } from "./utils";
-import { GAME_STATUS, colors } from "./constants";
+import { GAME_STATUS, colors, TIME } from "./constants";
 
-import { FaPlay, FaPause } from "react-icons/fa";
+import { FaPause } from "react-icons/fa";
 import { MdRestartAlt } from "react-icons/md";
+import Modal from "./components/modal";
 
 function App() {
   const [gameStatus, setGameStatus] = useState(GAME_STATUS.STOPPED);
-  const [time, setTime] = useState(20);
+  const [time, setTime] = useState(TIME);
   const [matrix, setMatrix] = useState(generateMatrix());
   const [moves, setMoves] = useState([]);
   const [removedCells, setRemovedCells] = useState([]);
+  const [modal, setModal] = useState({ show: false, type: "" });
 
   useEffect(() => {
     if (gameStatus === GAME_STATUS.PLAYING) {
@@ -21,15 +23,26 @@ function App() {
         setTime((time) => (time > 0 ? time - 1 : time));
       }, 1000);
 
+      setModal({ show: false, type: "" });
+
       return () => clearInterval(interval);
+    } else {
+      setModal({
+        show: true,
+        type: gameStatus,
+      });
     }
   }, [gameStatus]);
 
   useEffect(() => {
-    if (time == 0) {
-      setGameStatus(GAME_STATUS.STOPPED);
+    if (removedCells.length == 8 * 10) {
+      setGameStatus(GAME_STATUS.WON);
+    } else {
+      if (time == 0) {
+        setGameStatus(GAME_STATUS.GAME_OVER);
+      }
     }
-  }, [time]);
+  }, [time, removedCells]);
 
   function formatTime(seconds) {
     let minutes = Math.floor(seconds / 60);
@@ -42,22 +55,20 @@ function App() {
     return time;
   }
 
-  function startTimer() {}
-
-  function stopTimer() {}
-
-  function start() {
+  function retry() {
+    setRemovedCells([]);
+    setMoves([]);
+    setTime(TIME);
+    setModal({ show: false, type: "" });
     setGameStatus(GAME_STATUS.PLAYING);
-    startTimer();
   }
 
   function pause() {
     setGameStatus(GAME_STATUS.PAUSED);
-    stopTimer();
   }
 
   function reset() {
-    setTime(90);
+    setTime(TIME);
     setGameStatus(GAME_STATUS.STOPPED);
     setMatrix(generateMatrix());
     setRemovedCells([]);
@@ -108,17 +119,22 @@ function App() {
 
   return (
     <div className="App">
+      {modal.show && (
+        <Modal
+          type={modal.type}
+          setModal={setModal}
+          setGameStatus={setGameStatus}
+          retry={retry}
+          reset={reset}
+        />
+      )}
+
       <header>
         <h1>Onet Connect</h1>
       </header>
 
       <div className="cont">
         <div className="actions">
-          {(gameStatus === GAME_STATUS.STOPPED ||
-            gameStatus === GAME_STATUS.PAUSED) && (
-            <FaPlay className="play" size={21} onClick={start} />
-          )}
-
           {gameStatus === GAME_STATUS.PLAYING && (
             <FaPause className="play" size={21} onClick={pause} />
           )}
