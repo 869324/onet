@@ -2,6 +2,8 @@ export const GAME_STATUS = {
   STOPPED: "STOPPED",
   PAUSED: "PAUSED",
   PLAYING: "PLAYING",
+  WON: "WON",
+  GAME_OVER: "GAME_OVER",
 };
 
 export const colors = [
@@ -19,3 +21,5 @@ export const DIRECTION = {
   VERTICAL: "VERTICAL",
   HORIZONTAL: "HORIZONTAL",
 };
+
+export const TIME = 90;
