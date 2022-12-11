@@ -14,3 +14,8 @@ export const colors = [
   "#5d4108",
   "#f7551f",
 ];
+
+export const DIRECTION = {
+  VERTICAL: "VERTICAL",
+  HORIZONTAL: "HORIZONTAL",
+};

@@ -2,7 +2,7 @@ import "./App.css";
 
 import { useEffect, useState } from "react";
 
-import { generateMatrix, checkStraightRoute } from "./utils";
+import { generateMatrix, checkRoutes } from "./utils";
 import { GAME_STATUS, colors } from "./constants";
 
 import { FaPlay, FaPause } from "react-icons/fa";
@@ -102,13 +102,7 @@ function App() {
     if (cell1Color !== cell2Color) {
       return false;
     } else {
-      let isValid = checkStraightRoute(matrix, removedCells, cell1, cell2);
-      if (isValid) {
-        return isValid;
-      } else {
-        return false;
-        //isValid = checkOneTurnRoute(matrix, removedCells, cell1, cell2)
-      }
+      return checkRoutes(matrix, removedCells, cell1, cell2);
     }
   }
 
